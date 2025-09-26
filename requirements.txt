@@ -1,0 +1,10 @@
+watchdog>=4.0.0
+click>=8.1.7
+pyyaml>=6.0.1
+rich>=13.7.1
+streamlit>=1.39.0
+flask>=3.0.3
+plotly>=5.23.0
+pandas>=2.2.2
+sqlalchemy>=2.0.32
+python-dotenv>=1.0.1
