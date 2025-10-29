@@ -1,17 +1,38 @@
 import os
-from transformers import pipeline, AutoTokenizer
+from transformers import pipeline, AutoTokenizer, CLIPProcessor, CLIPModel
 from PyPDF2 import PdfReader
 import docx
 from PIL import Image
+import torch
+import warnings
+warnings.filterwarnings("ignore", "Possibly corrupt EXIF data.")
 
-toxic_model = pipeline("text-classification", model="unitary/toxic-bert")
-violence_model = pipeline("text-classification", model="KoalaAI/Text-Moderation")
-sexual_model = pipeline("text-classification", model="Vrandan/Comment-Moderation")
+text_morderator = pipeline( model="facebook/bart-large-mnli")
+image_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+image_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 
-image_morderator=pipeline("image-classification",model="falconsai/nsfw_image_detection")
 
-tokenizer = AutoTokenizer.from_pretrained("unitary/toxic-bert")
+tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-mnli")
 
+VIOLATION_LABELS = [
+    "violence",
+    "Fight",
+    "gore",
+    "blood",
+    "weapon",
+    "nudity",
+    "sexual",
+    "hate speech",
+    "hate symbol",
+    "threat",
+    "insult",
+    "self-harm",
+    "suicide",
+    "drug use",      
+    "promoting illegal acts", 
+    "severe insult",
+    "disturbing content"
+]
 def extract_text(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     text = ""
@@ -56,45 +77,51 @@ def chunk_text(text, tokenizer, max_tokens=512):
 def scan_files(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     violations=set()
-
+    threshold = 0.6
     if ext in [".pdf",".txt",".docx"]:
         text = extract_text(file_path)
         if text.strip():
             chunks = chunk_text(text, tokenizer)
-            label_to_category = {
-                "S": "Sexual",
-                "H": "Hate",
-                "V": "Violence",
-                "HR": "Harassment",
-                "SH": "Self-Harm",
-                "S3": "Sexual/Minors",
-                "H2": "Hate/Threat",
-                "V2": "Violence/Graphic",
-                "OK": "Safe Content"
-            }
+            
             try:
                 for chunk in chunks:
-                    for res in toxic_model(chunk):
-                        if res['label'].lower() != "neutral" and res['score'] > 0.7:
-                            violations.add(res['label'])
-                    for res in violence_model(chunk):
-                        if res['label'].lower() != "ok" and res['score'] > 0.3:
-                            violations.add(label_to_category[res['label']])
-                    
-                    for res in sexual_model(chunk):
-                        if res['label'].lower() != "ok" and res['score'] > 0.3:
-                            violations.add(label_to_category[res['label']])
+                    result = text_morderator(
+                        chunk,
+                        candidate_labels=VIOLATION_LABELS,
+                        multi_label=True
+                    )
+                    for i, label in enumerate(result['labels']):
+                        if result['scores'][i] > threshold:
+                            violations.add(label)
             except Exception as e:
                 print(f"Error scanning text: {e}")
     
     elif ext in [".jpg",".jpeg",".png",".gif",".bmp"]:
         try:
-            image = Image.open(file_path)
-            result = image_morderator(image)
-            flagged = [r for r in result if r['label'].lower() != "normal" and r['score'] > 0.65]
-            if flagged:
-                for r in flagged:
-                    violations.add(r['label'])
+            image = Image.open(file_path).convert("RGB")
+
+            # --- Use the MANUAL processor and model ---
+            inputs = image_processor(
+                text=VIOLATION_LABELS, 
+                images=image, 
+                return_tensors="pt", 
+                padding=True
+            )
+
+            with torch.no_grad(): # Disable gradient calculations for inference
+                outputs = image_model(**inputs)
+            
+            logits_per_image = outputs.logits_per_image # Raw similarity scores
+            probs = logits_per_image.softmax(dim=1).cpu().squeeze() # Apply softmax, move to CPU, make 1D
+            if probs.dim() == 0: # Handle case for single label result
+                if probs.item() > threshold:
+                     print(f"  Violation found: '{VIOLATION_LABELS[0]}' (Score: {probs.item():.2f})")
+                     violations.add(VIOLATION_LABELS[0])
+            else:
+                for i, label in enumerate(VIOLATION_LABELS):
+                    score = probs[i].item()
+                    if score > threshold:
+                        violations.add(label) 
         except Exception as e:
             print(f"Could not open image {file_path}: {e}")
 
@@ -105,8 +132,8 @@ def scan_files(file_path):
     if violations:
         return{"status": "Danger","voilations": list(violations)}
     else :
-        return{"status": "safe","voilations": []}
+        return{"status": "safe"}
     
 if __name__ == "__main__":
-    result = scan_files("slim shady.txt")
+    result = scan_files("eg3.jpg")
     print(result)
