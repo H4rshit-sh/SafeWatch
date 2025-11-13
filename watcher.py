@@ -99,5 +99,5 @@ def start_watch(path_to_watch):
     observer.join()
 
 if __name__ == "__main__":
-    folder = r"D:\Proj\SafeWatch\SafeFolder"
+    folder = r"//path to folder to moniter"
     start_watch(folder)
