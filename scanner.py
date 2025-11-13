@@ -78,6 +78,7 @@ def scan_files(file_path):
     ext = os.path.splitext(file_path)[1].lower()
     violations=set()
     threshold = 0.6
+    threshold_img = 0.99
     if ext in [".pdf",".txt",".docx"]:
         text = extract_text(file_path)
         if text.strip():
@@ -100,7 +101,6 @@ def scan_files(file_path):
         try:
             image = Image.open(file_path).convert("RGB")
 
-            # --- Use the MANUAL processor and model ---
             inputs = image_processor(
                 text=VIOLATION_LABELS, 
                 images=image, 
@@ -112,10 +112,9 @@ def scan_files(file_path):
                 outputs = image_model(**inputs)
             
             logits_per_image = outputs.logits_per_image # Raw similarity scores
-            probs = logits_per_image.softmax(dim=1).cpu().squeeze() # Apply softmax, move to CPU, make 1D
-            if probs.dim() == 0: # Handle case for single label result
+            probs = logits_per_image.softmax(dim=1).cpu().squeeze() # Apply sigmoid, move to CPU, make 1D
+            if probs.dim() == 0: #Handle case for single label result
                 if probs.item() > threshold:
-                     print(f"  Violation found: '{VIOLATION_LABELS[0]}' (Score: {probs.item():.2f})")
                      violations.add(VIOLATION_LABELS[0])
             else:
                 for i, label in enumerate(VIOLATION_LABELS):
@@ -130,10 +129,6 @@ def scan_files(file_path):
         pass
     
     if violations:
-        return{"status": "Danger","voilations": list(violations)}
+        return{"status": "Danger","violations": list(violations)}
     else :
-        return{"status": "safe"}
-    
-if __name__ == "__main__":
-    result = scan_files("eg3.jpg")
-    print(result)
+        return{"status": "safe","violations": []}

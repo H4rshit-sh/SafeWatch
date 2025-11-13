@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeWatch Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+
+    <header>
+        <h1>SafeWatch Dashboard</h1>
+        <p>File Monitoring Review Queue</p>
+    </header>
+
+    <main>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>File Path</th>
+                    <th>Category</th>
+                    <th>Violations</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 
+                  This is Jinja2 templating. Flask will loop through the 'logs'
+                  list we passed from Python and create a table row for each log.
+                -->
+                {% if logs %}
+                    {% for log in logs %}
+                    <!-- We add a class to the row if it's reviewed -->
+                    <tr class="log-row {% if log.reviewed %}is-reviewed{% endif %}" id="log-{{ log.id }}">
+                        
+                        <!-- Status Badge -->
+                        <td>
+                            <span class="status status-{{ log.status | lower }}">
+                                {{ log.status }}
+                            </span>
+                        </td>
+                        
+                        <!-- Log Info -->
+                        <td class="timestamp">{{ log.timestamp }}</td>
+                        <td class="file-path">{{ log.file_path }}</td>
+                        <td>{{ log.category }}</td>
+
+                        <!-- Violations List -->
+                        <td>
+                            {% if log.violations %}
+                                <ul class="violations-list">
+                                    {% for violation in log.violations %}
+                                        <li>{{ violation }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="no-violations">--</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Action Button -->
+                        <td class="action-cell">
+                            {% if log.reviewed %}
+                                <span class="reviewed-text">Reviewed</span>
+                            {% else %}
+                                <button class="review-btn" data-id="{{ log.id }}">
+                                    Mark as Reviewed
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <!-- Show this row if the database is empty -->
+                    <tr>
+                        <td colspan="6" class="no-logs">
+                            No scan logs found. Drop files in your watch folder.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,152 @@
+/* --- Basic Setup --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 24px;
+}
+
+header {
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+}
+
+h1 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+p {
+    color: #7f8c8d;
+    margin: 4px 0 0;
+    font-size: 1.1rem;
+}
+
+main {
+    width: 100%;
+    overflow-x: auto; /* Allow horizontal scrolling on small screens */
+}
+
+/* --- Table Styling --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 14px 18px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #e6eaea;
+}
+
+th {
+    background-color: #ecf0f1;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Dim rows that have been reviewed */
+tr.is-reviewed {
+    opacity: 0.6;
+    background-color: #f9f9f9;
+}
+
+tr.is-reviewed:hover {
+    opacity: 1; /* Bring back on hover */
+}
+
+.timestamp {
+    font-size: 0.9rem;
+    color: #555;
+    white-space: nowrap;
+}
+
+.file-path {
+    font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: #005a9c;
+    word-break: break-all;
+}
+
+.no-logs {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #777;
+    padding: 40px;
+}
+
+/* --- Status & Violations Styling --- */
+.status {
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: white;
+    display: inline-block;
+}
+
+.status-danger {
+    background-color: #c62828; /* Red */
+}
+
+.status-safe {
+    background-color: #2e7d32; /* Green */
+}
+
+.violations-list {
+    margin: 0;
+    padding-left: 18px;
+    color: #c62828;
+    font-weight: 500;
+}
+
+.violations-list li {
+    margin-bottom: 4px;
+}
+.violations-list li:last-child {
+    margin-bottom: 0;
+}
+
+.no-violations {
+    color: #999;
+}
+
+/* --- Action Button Styling --- */
+.action-cell {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.review-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.review-btn:hover {
+    background-color: #2980b9;
+}
+
+.reviewed-text {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-weight: bold;
+}
