@@ -64,3 +64,10 @@ The project is broken into several modular components that work in sequence:
     * A `Flask` application that serves the web UI.
     * `/`: The main route that renders the dashboard.
     * `/api/logs`: An API endpoint that provides all
+  
+## How to use:
+   1. clone Safewatch repositary
+   2. run log_manager to create sql database
+   3. run `python dashboard.py` , to launch dashboard in browser
+   4. run `python watcher.py`, to start live scanning
+      
