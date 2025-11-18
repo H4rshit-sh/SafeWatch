@@ -9,9 +9,15 @@
 </head>
 <body>
 
-    <header>
-        <h1>SafeWatch Dashboard</h1>
-        <p>File Monitoring Review Queue</p>
+    <header style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>SafeWatch Dashboard</h1>
+            <p>File Monitoring Review Queue</p>
+        </div>
+        <!-- Logout button linking to the Flask route -->
+        <a href="/logout" style="color: #c62828; text-decoration: none; font-weight: bold; border: 1px solid #c62828; padding: 8px 12px; border-radius: 4px; transition: background 0.2s;">
+            Logout
+        </a>
     </header>
 
     <main>
@@ -33,7 +39,6 @@
                 -->
                 {% if logs %}
                     {% for log in logs %}
-                    <!-- We add a class to the row if it's reviewed -->
                     <tr class="log-row {% if log.reviewed %}is-reviewed{% endif %}" id="log-{{ log.id }}">
                         
                         <!-- Status Badge -->

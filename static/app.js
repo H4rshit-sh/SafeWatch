@@ -1,58 +1,62 @@
-// Wait for the entire HTML page to load before running the script
 document.addEventListener('DOMContentLoaded', () => {
-
-    // Find all buttons with the class '.review-btn'
-    const reviewButtons = document.querySelectorAll('.review-btn');
-
-    // Add a 'click' event listener to each button found
-    reviewButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // Get the log ID from the button's 'data-id' attribute
-            const logId = button.dataset.id;
-            
-            // Call our 'markAsReviewed' function
-            markAsReviewed(logId, button);
-        });
-    });
+    fetchLogs();
 });
 
-function markAsReviewed(logId, buttonElement) {
-    // This is an asynchronous 'fetch' request to our Flask server.
-    // It calls the '@app.route('/review/<int:log_id>', methods=['POST'])' endpoint.
-    fetch(`/review/${logId}`, {
-        method: 'POST', // We are sending data (or at least, making a change)
-    })
-    .then(response => {
-        // Check if the server responded with 'OK' (status 200)
-        if (response.ok) {
-            return response.json(); // Parse the JSON response from Flask
-        } else {
-            // If the server had an error, throw an error
-            throw new Error('Server responded with an error.');
-        }
-    })
-    .then(data => {
-        // 'data' is the {status: 'success'} object from Flask
-        if (data.status === 'success') {
-            console.log(data.message);
-            
-            // --- Update the UI without reloading the page ---
-            
-            const cell = buttonElement.parentElement;
-            
-            cell.innerHTML = '<span class="reviewed-text">Reviewed</span>';
-            
-            const row = buttonElement.closest('tr');
-            if (row) {
-                row.classList.add('is-reviewed');
+function fetchLogs() {
+    fetch('/api/logs')
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('table tbody');
+            tableBody.innerHTML = ''; // Clear "Loading..." row
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="no-logs">No scan logs found.</td></tr>';
+                return;
             }
-        } else {
-            alert('Failed to mark as reviewed. Please check console.');
-            console.error(data.message);
-        }
-    })
-    .catch(error => {
-        alert('An error occurred. Could not contact server.');
-        console.error('Fetch Error:', error);
-    });
+
+            data.forEach(log => {
+                const row = document.createElement('tr');
+                if (log.reviewed) row.classList.add('is-reviewed');
+                
+                // Create violations list HTML
+                let violationsHtml = '<span class="no-violations">--</span>';
+                if (log.violations && log.violations.length > 0) {
+                    violationsHtml = '<ul class="violations-list">' + 
+                        log.violations.map(v => `<li>${v}</li>`).join('') + 
+                        '</ul>';
+                }
+
+                // Action button HTML
+                let actionHtml = '<span class="reviewed-text">Reviewed</span>';
+                if (!log.reviewed) {
+                    actionHtml = `<button class="review-btn" onclick="markAsReviewed(${log.id}, this)">Mark as Reviewed</button>`;
+                }
+
+                row.innerHTML = `
+                    <td><span class="status status-${log.status.toLowerCase()}">${log.status}</span></td>
+                    <td class="timestamp">${log.timestamp}</td>
+                    <td class="file-path">${log.file_path}</td>
+                    <td>${log.category}</td>
+                    <td>${violationsHtml}</td>
+                    <td class="action-cell">${actionHtml}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching logs:', error));
+}
+
+function markAsReviewed(logId, btnElement) {
+    fetch(`/api/review/${logId}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const row = btnElement.closest('tr');
+                row.classList.add('is-reviewed');
+                btnElement.parentElement.innerHTML = '<span class="reviewed-text">Reviewed</span>';
+            } else {
+                alert('Failed to update status');
+            }
+        })
+        .catch(error => console.error('Error:', error));
 }
